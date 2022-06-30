@@ -9,3 +9,6 @@ This should clone the submodules into your local git repo.
 
 
 
+startup.m will run and load all relevant paths and directories. For startup.m to run open MATLAB from the parent directory,
+i.e. the location of the startup.m script. [Note startup.m script is yet to be configured properly as it is a template used on previous projects. Feel free to alter it to suit the environment that you're working from].
+
