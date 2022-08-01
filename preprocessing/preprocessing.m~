@@ -1,0 +1,9 @@
+clear all;
+close all;
+
+% Set 
+path_fieldtrip = '/Users/borjanmilinkovic/Documents/toolboxes/fieldtrip';
+path_LSCPtools = '/Users/borjanmilinkovic/Documents/toolboxes/LSCPtools';
+path_data = '/Users/borjanmilinkovic/Documents/data/restEEG_HealthySubjects';
+path_preproc = '/Users/borjanmilinkovic/Documents/data/MatlabSleepEmergence_data/Preproc_EEG';
+path_conditionsegmented = '/Users/borjanmilinkovic/Documents/data/MatlabSleepEmergence_data/ConditionSegmented_EEG';
