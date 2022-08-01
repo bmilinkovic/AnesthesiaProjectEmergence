@@ -1,16 +1,4 @@
-
-% Set all paths to external dependencies this could be done in my startup
-% file.
-
-path_fieldtrip = '/Users/borjanmilinkovic/Documents/toolboxes/fieldtrip';
-path_LSCPtools = '/Users/borjanmilinkovic/Documents/toolboxes/LSCPtools';
-path_rawdata = '/Volumes/dataSets/restEEGHealthySubjects/rawData';
-path_preproc = '/Volumes/dataSets/restEEGHealthySubjects/preprocessedData';
-
-
-addpath(path_fieldtrip);
-ft_defaults;
-addpath(genpath(path_LSCPtools));
+%% First get the list of files from our Raw data directory and set up our ouput directory of our preprocessing
 
 files = dir([path_rawdata filesep '*.mat']);
 output_dir = path_preproc;
@@ -19,9 +7,9 @@ if exist(output_dir) == 0
     mkdir(output_dir)
 end
 
-% looping over all subjects here.
+%% Start preprocessing: Looping over all subjects.
 
-segmet = 1;
+segment = 1;
 for nfiles = 1:length(files)
     filename = files(nfiles).name;
     foldername = files(nfiles).folder;
@@ -39,7 +27,10 @@ for nfiles = 1:length(files)
     cfg = ft_definetrial(cfg);
 end
 
-    
+
+
+
+
     
     
 
