@@ -1,0 +1,113 @@
+
+import time as tm
+import os
+from glob import glob
+
+
+import pandas as pd
+import numpy as np
+import scipy as sc
+import scipy.io as sio
+from scipy import signal
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import mne
+from mne.datasets import fetch_fsaverage
+from pymatreader import read_mat
+
+#%% 1. Import data from HDD
+
+data_dir = '/Volumes/dataSets/restEEGHealthySubjects/rawData/'
+figures_dir = '/Volumes/dataSets/restEEGHealthySubjects/figures/'
+preprocessed_dir = '/Volumes/dataSets/restEEGHealthySubjects/preprocessedData/'
+subject_file = 'H0010W.mat'
+
+
+montage = mne.channels.read_custom_montage('/Volumes/dataSets/restEEGHealthySubjects/nexstim.sfp')
+
+# intialise subject_file
+# subject_ext = file[49]
+# subject_file = file[49:54]
+# subject_cond = file[54]
+
+#%% 2. CLEAN DATA (this might not need to be here as the dataset should be saved from _psd_sensor_space.py_
+
+rawDataStructure = read_mat(os.path.join(data_dir, subject_file))
+info = mne.create_info(ch_names=rawDataStructure['chlocs']['labels'], sfreq=rawDataStructure['srate'], ch_types='eeg')
+info.set_montage(montage)
+raw = mne.io.RawArray(rawDataStructure['EEG'].T, info=info)    # create Raw data structure
+raw_filtered = raw.copy().filter(l_freq=1, h_freq=150)
+raw_notched = raw_filtered.copy().notch_filter(freqs=[50, 100], method='spectrum_fit')
+raw_downsample = raw_notched.copy().resample(sfreq=256)
+raw_avg_ref = raw_downsample.copy().set_eeg_reference(ref_channels='average')
+raw_downsample.set_eeg_reference(projection=True)
+
+#%% 3. LOADING IN FSAVERAGE FOR FORWARD-OPERATOR _fwd_
+
+fs_dir = fetch_fsaverage(verbose=True)
+fs_subjects_dir = os.path.dirname(fs_dir)
+# The files live in:
+subject = 'fsaverage'
+trans = 'fsaverage'  # MNE has a built-in fsaverage transformation
+src = os.path.join(fs_dir, 'bem', 'fsaverage-ico-5-src.fif')
+bem = os.path.join(fs_dir, 'bem', 'fsaverage-5120-5120-5120-bem-sol.fif')
+
+
+# Check that the locations of EEG electrodes is correct with respect to MRI
+#mne.viz.plot_alignment(
+#    raw_avg_ref.info, src=src, eeg=['original', 'projected'], trans=trans,
+#    show_axes=True, mri_fiducials=True, dig='fiducials')
+
+#%% 4. COMPUTE COVARIANCE MATRIX for lead field construction (gain matrix, or spatial filter).
+
+# 4.1. create 2 second epochs from continuous data
+
+epochs = mne.make_fixed_length_epochs(raw_downsample, duration=2, preload=True)
+event_related_plot = epochs.plot_image(picks=['EEG43'])
+
+# 4.2. covariance matrix of sensor space data
+
+data_cov = mne.compute_covariance(epochs, method='empirical')
+data_cov.plot(epochs.info)
+
+#%% 5. COMPUTE FORWARD SOLUTION
+
+fwd = mne.make_forward_solution(raw_downsample.info, trans=trans, src=src,
+                                bem=bem, eeg=True, mindist=5.0, n_jobs=-1)
+print(fwd)
+
+
+#%% 6. COMPUTING SPATIAL FILTER
+
+filters = mne.beamformer.make_lcmv(epochs.info, fwd, data_cov, reg=0.05,
+                    pick_ori='max-power',
+                    weight_norm='unit-noise-gain', rank=None)
+
+#%% 7. COMPUTING SOURCE TIME-COURSE!
+
+stc = mne.beamformer.apply_lcmv_epochs(epochs, filters)
+
+#%% 8. APPLY PARCELLATION
+
+labels = mne.read_labels_from_annot('fsaverage', 'aparc', subjects_dir=fs_subjects_dir)
+label_colors = [label.color for label in labels]
+
+# Average the source estimates within each label using sign-flips to reduce
+# signal cancellations, also here we return a generator
+
+# *src*  needs to be the source space information and now just the path to the file as set above
+label_ts = mne.extract_label_time_course(stc, labels, src, mode='mean_flip', return_generator=True)
+
+# from here I should have my source localised data tot eh _aparc_ parcellation of 70 regions (Desikan-Killiany Atlas)
+
+
+#%% Save variables that are necessary for later source-space visualisation and performance of PSD and MVGC analysis
+
+
+
+#%% PSD in source space across epochs.
+
+
