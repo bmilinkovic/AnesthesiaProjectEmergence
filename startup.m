@@ -38,7 +38,7 @@ addpath(genpath(LSCPtoolsDir));
 
 path_rawdata = '/Volumes/dataSets/restEEGHealthySubjects/rawData';
 path_preproc = '/Volumes/dataSets/restEEGHealthySubjects/preprocessedData';
-
+path_source = '/Volumes/dataSets/restEEGHealthySubjects/preprocessedData/sourceReconstructions';
 
 
 
