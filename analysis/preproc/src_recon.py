@@ -23,7 +23,7 @@ from pymatreader import read_mat
 data_dir = '/Volumes/dataSets/restEEGHealthySubjects/rawData/'
 figures_dir = '/Volumes/dataSets/restEEGHealthySubjects/figures/'
 preprocessed_dir = '/Volumes/dataSets/restEEGHealthySubjects/preprocessedData/'
-subject_file = 'H0048W.mat'
+subject_file = 'H0010W.mat'
 
 montage = mne.channels.read_custom_montage('/Volumes/dataSets/restEEGHealthySubjects/nexstim.sfp')
 
@@ -55,7 +55,9 @@ for file in glob(data_dir + '*.mat'):
     # The files live in:
     subject = 'fsaverage'
     trans = 'fsaverage'  # MNE has a built-in fsaverage transformation
-    src = os.path.join(fs_dir, 'bem', 'fsaverage-ico-5-src.fif')
+    #src = os.path.join(fs_dir, 'bem', 'fsaverage-ico-5-src.fif')
+    # use the below source reconstruction, as it uses less source dipoles.
+    src_downsampled = mne.setup_source_space(subject, spacing='ico4', subjects_dir=fs_subjects_dir, n_jobs=-1)
     bem = os.path.join(fs_dir, 'bem', 'fsaverage-5120-5120-5120-bem-sol.fif')
 
 
@@ -68,8 +70,7 @@ for file in glob(data_dir + '*.mat'):
 
     # 4.1. create 2 second epochs from continuous data
 
-    epochs = mne.make_fixed_length_epochs(raw_downsample, duration=2, preload=True)
-    event_related_plot = epochs.plot_image(picks=['EEG43'])
+    epochs = mne.make_fixed_length_epochs(raw_downsample, duration=2) #can switch back to preload=True, if needed
 
     # 4.2. covariance matrix of sensor space data
 
@@ -78,7 +79,7 @@ for file in glob(data_dir + '*.mat'):
 
     #%% 5. COMPUTE FORWARD SOLUTION
 
-    fwd = mne.make_forward_solution(raw_downsample.info, trans=trans, src=src,
+    fwd = mne.make_forward_solution(raw_downsample.info, trans=trans, src=src_downsampled,
                                     bem=bem, eeg=True, mindist=5.0, n_jobs=-1)
     print(fwd)
 
@@ -97,7 +98,7 @@ for file in glob(data_dir + '*.mat'):
 
     #%% 8. APPLY PARCELLATION
 
-    labels = mne.read_labels_from_annot('fsaverage', 'aparc', subjects_dir=fs_subjects_dir)
+    labels = mne.read_labels_from_annot('fsaverage', 'HCPMMP1_combined', subjects_dir=fs_subjects_dir) # HCPMMP1_combined has 46 regions.
     label_colors = [label.color for label in labels]
 
     # Average the source estimates within each label using sign-flips to reduce
