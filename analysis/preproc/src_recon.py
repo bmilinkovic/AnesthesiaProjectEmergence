@@ -1,4 +1,4 @@
-
+#%%
 import time as tm
 import os
 from glob import glob
@@ -18,13 +18,14 @@ import mne
 from mne.datasets import fetch_fsaverage
 from pymatreader import read_mat
 
+
 #%% 1. Import data from HDD
 
 data_dir = '/Volumes/dataSets/restEEGHealthySubjects/rawData/'
 figures_dir = '/Volumes/dataSets/restEEGHealthySubjects/figures/'
 preprocessed_dir = '/Volumes/dataSets/restEEGHealthySubjects/preprocessedData/'
 subject_file = 'H0010W.mat'
-
+#%%
 montage = mne.channels.read_custom_montage('/Volumes/dataSets/restEEGHealthySubjects/nexstim.sfp')
 
 for file in glob(data_dir + '*.mat'):
@@ -99,6 +100,15 @@ for file in glob(data_dir + '*.mat'):
     #%% 8. APPLY PARCELLATION
 
     labels = mne.read_labels_from_annot('fsaverage', 'HCPMMP1_combined', subjects_dir=fs_subjects_dir) # HCPMMP1_combined has 46 regions.
+    label_names = [label.name for label in labels]
+
+    # Create the results/utils/ directory if it doesn't exist
+    save_dir = os.path.join(os.getcwd(), 'results', 'utils')
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Save label_names.npy in the results/utils/ directory
+    np.save(os.path.join(save_dir, 'label_names.npy'), label_names)
+    
     label_colors = [label.color for label in labels]
 
     # Average the source estimates within each label using sign-flips to reduce
